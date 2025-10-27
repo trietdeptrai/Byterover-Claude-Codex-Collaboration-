@@ -41,7 +41,7 @@ Both agents need Byterover MCP configured:
 **Codex CLI**
 - Check configuration: `codex mcp list`
 - Should show `byterover-mcp` in the list
-- If missing, install following [Byterover MCP docs](https://github.com/byterover/mcp-server)
+- If missing, install [Byterover MCP](https://www.byterover.dev/)
 
 ### Basic Usage
 
@@ -142,7 +142,7 @@ Codex Feedback Addressed:
 ✅ Error handling recommendation - Added circuit breaker pattern
 ```
 
-### Phase 3: Validation (Optional)
+### Phase 3: Validation
 
 #### Claude Invokes Codex for Validation
 ```typescript
