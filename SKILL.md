@@ -1,6 +1,6 @@
 ---
 name: claude-codex-collaboration
-description: Transfer context between Claude Code and Codex CLI using Byterover as shared memory. Claude creates plans and implementations while Codex provides reviews and validation. Enables cross-agent collaboration with persistent context.
+description: Enable collaboration between Claude Code and Codex CLI using Byterover as shared memory. This skill should be used when architectural review or code validation from Codex is desired before or after implementation. Claude creates plans and implementations while Codex provides expert reviews and validation, with all context persisting in Byterover.
 allowed-tools:
   - mcp__byterover-mcp__byterover-store-knowledge
   - mcp__byterover-mcp__byterover-retrieve-knowledge
@@ -9,485 +9,421 @@ allowed-tools:
   - Write
 ---
 
-# Claude-Codex Collaboration Skill
+# Claude-Codex Collaboration
 
-**Context Transfer Between AI Agents Using Byterover**
+Transfer context between Claude Code and Codex CLI using Byterover as shared memory for collaborative development workflows.
 
-This skill enables collaboration between Claude Code and Codex CLI by using Byterover as a shared memory layer. Claude creates plans and implementations, Codex provides reviews and validation, and all context persists for both agents to access.
+## Purpose
 
-## Core Value Proposition
-
-**Problem**: When working with both Claude Code and Codex, context doesn't transfer between agents. You have to manually copy-paste information, losing efficiency and context.
-
-**Solution**: Use Byterover MCP as shared memory. Both agents can store and retrieve knowledge, enabling true collaboration workflows.
+Enable seamless collaboration between two AI agents by using Byterover MCP as a persistent shared memory layer. Claude Code creates architectural plans and implementations, while Codex CLI provides expert architectural review and code validation. All knowledge persists in Byterover, allowing both agents to access the same context without manual information transfer.
 
 ## When to Use This Skill
 
-Use this skill when you want to:
-- Get Codex's architectural review on Claude's plans before implementation
-- Have Codex validate Claude's implementation quality
-- Leverage both agents' strengths in a single workflow
-- Maintain persistent context across agent switches
-- Build a knowledge base of validated patterns
+Invoke this skill when:
 
-## Workflow Overview
+- Architectural review from Codex is desired before implementing a feature
+- Code validation from Codex is needed after implementation
+- Complex features benefit from multi-agent review before coding
+- Building a knowledge base of validated implementation patterns
+- Working on projects where quality assurance through peer review is valuable
 
-```
-┌─────────────┐         ┌──────────────┐         ┌─────────────┐
-│   Claude    │ ──────► │   Byterover  │ ◄────── │    Codex    │
-│    Code     │         │    Memory    │         │     CLI     │
-│  (Plans &   │         │   (Shared    │         │  (Review &  │
-│  Implement) │         │   Context)   │         │  Validate)  │
-└─────────────┘         └──────────────┘         └─────────────┘
-```
+## Workflow
 
-**Simple 4-Step Process:**
+### Phase 1: Planning & Review
 
-1. **Claude Creates Plan** → Stores in Byterover with unique session ID
-2. **Codex Reviews Plan** → Retrieves from Byterover, provides feedback
-3. **Claude Implements** → Based on validated plan
-4. **Codex Validates** → Reviews actual code, final approval
+#### Step 1: Create Architectural Plan
 
-## Understanding Byterover's Capabilities
+When the user requests a feature, create a comprehensive architectural plan that includes:
 
-### What Byterover Provides
+- Context about the problem being solved
+- Proposed technical approach with code examples
+- Key architectural decisions and rationale
+- Open questions or areas where Codex's expertise would be valuable
+- Technologies and libraries being considered
 
-Byterover uses **semantic search** over stored memories:
+Structure the plan clearly with markdown sections for easy review.
 
-```typescript
-// Store knowledge - only parameter: messages (string)
-mcp__byterover-mcp__byterover-store-knowledge({
-  messages: "Your content here..."
-})
+#### Step 2: Store Plan in Byterover
 
-// Retrieve knowledge - semantic search
-mcp__byterover-mcp__byterover-retrieve-knowledge({
-  query: "search query",
-  limit: 5
-})
-```
-
-**Key characteristics:**
-- ✅ Semantic search (finds by meaning, not just keywords)
-- ✅ Persistent across sessions
-- ✅ Accessible by both Claude Code and Codex
-- ❌ No tags/labels (use unique IDs in content instead)
-- ❌ No exact versioning (semantic matching only)
-
-### Working Within Constraints
-
-**Use unique session IDs in content** to make memories retrievable:
-
-```markdown
-**[SESSION-ABC123-XYZ789] Claude Plan: User Authentication**
-
-Generate a random, unique session ID and include it in EVERY stored artifact.
-This makes retrieval more reliable via semantic search.
-```
-
-## Practical Workflow
-
-### Step 1: Claude Creates Plan
-
-When the user requests a feature:
-
-1. **Generate unique session ID**: Use timestamp + random string
-   ```
-   SESSION-20251027-A7F3K2M9
-   ```
-
-2. **Create detailed plan**
-
-3. **Store in Byterover** with session ID embedded:
+Store the plan using the Byterover MCP tool with rich, searchable content:
 
 ```typescript
 mcp__byterover-mcp__byterover-store-knowledge({
   messages: `
-**[SESSION-20251027-A7F3K2M9] CLAUDE PLAN: Rate Limiting for Express API**
+**ARCHITECTURAL PLAN: [Feature Name]**
+Collaboration between Claude Code and Codex CLI
+Status: AWAITING_REVIEW
 
-## Context
-User wants to add rate limiting to Express API to prevent abuse.
-API serves both web and mobile clients.
+## Problem Statement
+[Clear description of what needs to be built and why]
 
-## Proposed Approach
+## Proposed Solution
 
-### 1. Library Selection
-Use express-rate-limit with Redis backend
-- Production-ready, 10M+ downloads/week
-- Supports distributed systems via Redis
+### Technical Approach
+[Detailed technical design with code examples]
 
-### 2. Implementation Strategy
-\`\`\`typescript
-import rateLimit from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
+### Key Decisions
+[Important architectural choices and their rationale]
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per window
-  standardHeaders: true,
-  store: new RedisStore({
-    client: redisClient,
-    prefix: 'rate_limit:'
-  })
-});
+### Technologies
+[Libraries, frameworks, and tools being used]
 
-app.use(limiter);
-\`\`\`
+## Questions for Review
+1. [Specific question for Codex to address]
+2. [Another area where expert feedback is valuable]
 
-### 3. Configuration
-- Global limit: 100 req/15min
-- Auth endpoints: 20 req/15min (stricter)
-- Monitoring via logging
+## Implementation Plan
+[Step-by-step breakdown of how this will be built]
 
-## Open Questions for Codex Review
-1. Should we use IP-based or user-based rate limiting?
-2. What about users behind corporate NAT?
-3. Redis failure handling strategy?
-
-## Status
-AWAITING_CODEX_REVIEW
-
-Session ID for retrieval: SESSION-20251027-A7F3K2M9
+---
+Task: [Feature name/description for search retrieval]
+Agent: Claude Code
+Date: [Current date]
 `
 })
 ```
 
-4. **Tell user to invoke Codex**:
-   ```
-   "I've stored the plan in Byterover with session ID: SESSION-20251027-A7F3K2M9
+**Key principles:**
+- Include rich context for semantic search retrieval
+- Use clear section headers for easy parsing
+- Make the content self-contained and understandable
+- Include specific questions to guide Codex's review
 
-   Please run Codex with this command:
+#### Step 3: Instruct User to Invoke Codex
 
-   codex exec \"Retrieve the plan with session ID SESSION-20251027-A7F3K2M9 from Byterover memory and provide architectural review. Store your feedback in Byterover with the same session ID.\"
-   ```
+Provide the user with a clear Codex command to run:
 
-### Step 2: Codex Reviews Plan
-
-**User runs Codex command** (from Claude's instruction).
-
-**Codex will:**
-
-1. Retrieve plan from Byterover:
-   ```typescript
-   mcp__byterover-mcp__byterover-retrieve-knowledge({
-     query: "SESSION-20251027-A7F3K2M9 Claude plan rate limiting",
-     limit: 1
-   })
-   ```
-
-2. Analyze and provide review
-
-3. Store feedback in Byterover:
-   ```typescript
-   mcp__byterover-mcp__byterover-store-knowledge({
-     messages: `
-**[SESSION-20251027-A7F3K2M9] CODEX REVIEW: Rate Limiting Plan**
-
-## Strengths
-- Solid library choice
-- Redis for distributed systems is correct
-
-## Concerns
-1. **IP-based limiting problematic**: Users behind corporate NAT share IPs
-2. **Missing**: Hybrid approach (user ID when authenticated, IP as fallback)
-3. **Redis failure handling**: Need fallback strategy
-
-## Recommendations
-\`\`\`typescript
-const keyGenerator = (req) => {
-  return req.user?.id || req.ip; // Hybrid approach
-};
-\`\`\`
-
-Add Redis error handling with memory fallback.
-
-## Verdict
-✅ APPROVE with modifications above
-
-Session ID: SESSION-20251027-A7F3K2M9
-`
-   })
-   ```
-
-### Step 3: Claude Retrieves Feedback & Implements
-
-**User returns to Claude Code** and says:
 ```
-"Codex has reviewed the plan. Please retrieve the feedback and implement."
+I've stored the architectural plan in Byterover.
+
+To get Codex's review, run this command:
+
+codex exec "Use the byterover-retrieve-knowledge tool to search for the latest architectural plan about [feature description]. Review the technical approach, identify potential issues, and provide detailed feedback. Store your review in Byterover using byterover-store-knowledge."
+
+Alternatively, use the helper script:
+./collaborate.sh codex-review [identifier]
 ```
 
-**Claude will:**
+#### Step 4: Codex Retrieves and Reviews
 
-1. Retrieve Codex's review:
-   ```typescript
-   mcp__byterover-mcp__byterover-retrieve-knowledge({
-     query: "SESSION-20251027-A7F3K2M9 Codex review feedback",
-     limit: 2
-   })
-   ```
+The user runs Codex with the provided command. Codex will:
 
-2. Address feedback in implementation
+1. Use `byterover-retrieve-knowledge` to find the plan
+2. Analyze the architectural approach
+3. Identify concerns, risks, and improvement opportunities
+4. Store comprehensive feedback in Byterover
 
-3. Implement the feature with improvements
+Codex's review typically includes:
+- Strengths of the proposed approach
+- Potential issues or risks identified
+- Specific recommendations for improvement
+- Answers to the open questions
+- Overall verdict (approve, iterate, or reconsider)
 
-4. Store implementation summary:
-   ```typescript
-   mcp__byterover-mcp__byterover-store-knowledge({
-     messages: `
-**[SESSION-20251027-A7F3K2M9] IMPLEMENTATION COMPLETE: Rate Limiting**
+### Phase 2: Implementation
+
+#### Step 5: Retrieve Codex's Feedback
+
+When the user returns after Codex's review, retrieve the feedback:
+
+```typescript
+mcp__byterover-mcp__byterover-retrieve-knowledge({
+  query: "[feature description] Codex review architectural feedback",
+  limit: 3
+})
+```
+
+Use a descriptive query that combines:
+- The feature/task being worked on
+- Keywords like "Codex review" or "feedback"
+- Any identifying terms from the original plan
+
+Byterover uses semantic search, so conceptually similar queries will find related memories.
+
+#### Step 6: Implement with Improvements
+
+Analyze Codex's feedback and implement the feature incorporating:
+
+- Recommended architectural improvements
+- Solutions to identified risks
+- Answers to open questions
+- Best practices suggested by Codex
+
+Create clean, well-tested code that addresses all concerns raised in the review.
+
+#### Step 7: Store Implementation Summary
+
+After implementation, store a summary in Byterover:
+
+```typescript
+mcp__byterover-mcp__byterover-store-knowledge({
+  messages: `
+**IMPLEMENTATION COMPLETE: [Feature Name]**
+Collaboration between Claude Code and Codex CLI
+Status: READY_FOR_VALIDATION
 
 ## What Was Built
-Rate limiting system with Codex's recommended improvements:
-- Hybrid key generator (user ID + IP fallback)
-- Redis with memory store fallback
-- Comprehensive error handling
+[Overview of the implementation]
 
 ## Files Created/Modified
-- src/middleware/rateLimiter.ts (147 lines)
-- src/config/redis.ts (45 lines)
-- src/middleware/__tests__/rateLimiter.test.ts (218 lines)
+- path/to/file1.ts - [Description]
+- path/to/file2.ts - [Description]
+- path/to/test.ts - [Description]
 
-## Changes from Plan
-✅ Added hybrid user/IP identification (Codex recommendation)
-✅ Added Redis error handling with fallback
-✅ Enhanced monitoring
+## Codex Feedback Addressed
+✅ [Specific concern from review] - [How it was addressed]
+✅ [Another concern] - [Solution implemented]
+✅ [Recommendation] - [How it was incorporated]
 
-## Status
-READY_FOR_CODEX_VALIDATION
+## Key Implementation Details
+[Important technical decisions made during implementation]
 
-Session ID: SESSION-20251027-A7F3K2M9
+## Testing
+[Test coverage and approach]
+
+---
+Task: [Feature name/description for search retrieval]
+Agent: Claude Code
+Date: [Current date]
 `
-   })
-   ```
-
-### Step 4: Codex Validates Implementation
-
-**User invokes Codex for validation**:
-```bash
-codex exec "Retrieve implementation with session ID SESSION-20251027-A7F3K2M9 from Byterover. Review the actual code files and validate quality. Store validation results."
-```
-
-**Codex will:**
-
-1. Retrieve implementation summary
-2. Review actual code files listed
-3. Validate against best practices
-4. Store validation results in Byterover
-
-## Best Practices
-
-### 1. Always Use Unique Session IDs
-
-```
-✅ Good: SESSION-20251027-A7F3K2M9-rate-limiting
-✅ Good: SESSION-20251027-X9K2LP41-auth-system
-
-❌ Bad: session-1 (too generic)
-❌ Bad: rate-limiting (no uniqueness)
-```
-
-**Generate using**: Timestamp + random alphanumeric string + task description
-
-### 2. Embed Session ID Everywhere
-
-Every memory you store should include the session ID in:
-- The title/header (for visibility)
-- The content (for semantic search)
-- At the end (for reference)
-
-### 3. Use Clear Status Markers
-
-```markdown
-## Status
-AWAITING_CODEX_REVIEW
-READY_FOR_IMPLEMENTATION
-READY_FOR_CODEX_VALIDATION
-COMPLETE
-```
-
-This helps both agents understand where in the workflow you are.
-
-### 4. Include Context in Every Store
-
-Don't assume agents remember. Each stored artifact should be **self-contained**:
-
-```markdown
-✅ Good:
-"[SESSION-X] Plan for rate limiting Express API. User wants to prevent abuse..."
-
-❌ Bad:
-"[SESSION-X] Here's the plan." (missing context)
-```
-
-### 5. Query with Multiple Terms
-
-Semantic search works best with descriptive queries:
-
-```typescript
-✅ Good:
-query: "SESSION-20251027-A7F3K2M9 Codex review rate limiting feedback"
-
-❌ Bad:
-query: "SESSION-20251027-A7F3K2M9" (too narrow)
-```
-
-## Troubleshooting
-
-### Issue: Can't Retrieve Previous Memory
-
-**Cause**: Semantic search didn't find it or returned wrong result
-
-**Fix**:
-1. Use more specific query with multiple identifying terms
-2. Increase limit parameter (try limit: 5 instead of 1)
-3. Include task description in query, not just session ID
-
-```typescript
-// Better retrieval
-mcp__byterover-mcp__byterover-retrieve-knowledge({
-  query: "SESSION-20251027-A7F3K2M9 Claude plan rate limiting Express API",
-  limit: 3  // Get top 3 matches
 })
 ```
 
-### Issue: Retrieved Wrong Session's Memory
+### Phase 3: Validation (Optional)
 
-**Cause**: Session IDs too similar or insufficient context
+#### Step 8: Request Codex Validation
 
-**Fix**:
-1. Use more random characters in session ID
-2. Include task description in session ID
-3. Add more context in stored content
+Provide the user with a validation command:
 
-### Issue: Codex Doesn't Have MCP Tools
+```
+Implementation complete! For final validation from Codex, run:
 
-**Cause**: Codex may not have Byterover MCP configured
+codex exec "Use the byterover-retrieve-knowledge tool to search for the completed implementation of [feature description]. Review the actual code files listed and validate the implementation quality. Store validation results in Byterover using byterover-store-knowledge."
 
-**Fix**:
-```bash
-# Check Codex MCP configuration
-codex mcp list
-
-# Should show: byterover-mcp
+Alternatively, use the helper script:
+./collaborate.sh codex-validate [identifier]
 ```
 
-If not configured, user needs to add Byterover MCP to Codex config.
+#### Step 9: Codex Validates Implementation
 
-### Issue: Memory Takes Time to Be Searchable
+Codex will:
+1. Retrieve the implementation summary from Byterover
+2. Read the actual code files listed
+3. Validate code quality, patterns, and best practices
+4. Verify that review feedback was properly addressed
+5. Store validation results in Byterover
 
-**Cause**: Byterover processes memories asynchronously
+#### Step 10: Address Validation Feedback (If Needed)
 
-**Fix**: Wait 20-30 seconds after storing before retrieving
+If Codex identifies issues during validation:
 
-## Limitations & Workarounds
+1. Retrieve validation feedback from Byterover
+2. Address any remaining concerns
+3. Update the implementation
+4. Store a final summary noting all improvements
 
-### Limitation 1: No Exact Versioning
+### Phase 4: Knowledge Extraction
 
-**What this means**: Can't reliably store "plan v1" vs "plan v2"
+#### Step 11: Extract Reusable Patterns (Optional)
 
-**Workaround**: Single-pass workflow (one plan, one review, implement)
-
-**OR**: Use different session IDs for iterations:
-```
-SESSION-20251027-A7F3K2M9-ITERATION1
-SESSION-20251027-B8G4N3P0-ITERATION2
-```
-
-### Limitation 2: No Tags/Labels
-
-**What this means**: Can't filter by metadata
-
-**Workaround**: Embed all filterable info in content:
-```markdown
-**[SESSION-X] [TYPE: PLAN] [AGENT: CLAUDE] [STATUS: REVIEW] ...**
-```
-
-### Limitation 3: Semantic Search Uncertainty
-
-**What this means**: May retrieve similar but wrong memory
-
-**Workaround**:
-- Use highly unique session IDs
-- Include retrieval verification in workflow
-- Store rich context to improve matching
-
-## Advanced: Extracting Reusable Patterns
-
-After successful collaboration, extract the validated pattern:
+After successful collaboration, extract validated patterns for future reuse:
 
 ```typescript
 mcp__byterover-mcp__byterover-store-knowledge({
   messages: `
-**VALIDATED PATTERN: Express Rate Limiting with Redis**
+**VALIDATED PATTERN: [Pattern Name]**
+Production-Ready Implementation Pattern
+Validated through Claude-Codex Collaboration
 
-Source: Claude-Codex collaboration SESSION-20251027-A7F3K2M9
+## Pattern Overview
+[Description of the reusable pattern]
 
-## Production-Ready Pattern
-
+## Implementation Code
 \`\`\`typescript
-// Complete working code...
+[Complete, working code example]
 \`\`\`
 
 ## Key Decisions
-- Hybrid user/IP identification (avoids NAT issues)
-- Redis with memory fallback (handles failures)
-- Tiered limits by endpoint type
+- [Important architectural decision]
+- [Best practice applied]
+- [Performance consideration]
 
-## Performance
-Handles 10K req/sec with <5ms overhead
+## Use Cases
+- [When to use this pattern]
+- [What problems it solves]
 
-## Use For
-Any Express API needing distributed rate limiting
+## Lessons Learned
+[Important insights from the collaboration]
 
-Validated by: Codex architectural review
+---
+Pattern validated by: Codex architectural review
 Implemented by: Claude Code
-Status: Production-ready
+Date: [Current date]
 `
 })
 ```
 
-Now this pattern is available for future projects!
+These patterns become searchable knowledge for future projects.
 
-## Real-World Example
+## Best Practices
 
-See `references/example-session.md` for a complete walkthrough of implementing rate limiting using this workflow.
+### Writing Plans for Review
 
-## Quick Reference Card
+Create plans that are:
+- **Self-contained** - Include all necessary context
+- **Specific** - Provide concrete code examples
+- **Questionable** - Identify areas where expert input is valuable
+- **Structured** - Use clear sections and headers
 
-```bash
-# 1. Claude creates plan with unique session ID
-SESSION-{timestamp}-{random}-{task}
+### Querying Byterover
 
-# 2. Claude stores plan in Byterover
-mcp__byterover-mcp__byterover-store-knowledge({
-  messages: "[SESSION-X] Plan content..."
-})
+Construct queries that:
+- **Combine multiple terms** - Use feature name + keywords like "plan" or "review"
+- **Are descriptive** - Include enough context for semantic matching
+- **Are flexible** - Try variations if initial query doesn't return expected results
 
-# 3. User runs Codex review
-codex exec "Retrieve SESSION-X plan from Byterover and review"
+Examples:
+```typescript
+// Good queries
+query: "rate limiting Express API architectural plan"
+query: "Codex review authentication implementation"
+query: "validated pattern Redis caching"
 
-# 4. Claude retrieves feedback
-mcp__byterover-mcp__byterover-retrieve-knowledge({
-  query: "SESSION-X Codex review",
-  limit: 2
-})
-
-# 5. Claude implements & stores summary
-
-# 6. User runs Codex validation
-codex exec "Retrieve SESSION-X implementation and validate"
-
-# 7. Extract reusable pattern (optional)
+// Less effective queries
+query: "plan"  // Too generic
+query: "auth"  // Too vague
 ```
 
-## Summary
+### Storing in Byterover
 
-This skill demonstrates **the power of Byterover as a bridge between AI agents**:
+Store memories that are:
+- **Rich in context** - Include enough information for semantic search
+- **Clearly labeled** - Use descriptive titles and sections
+- **Self-documenting** - Readable without external context
+- **Searchable** - Include keywords relevant to future retrieval
 
-✅ Claude and Codex share context seamlessly
-✅ Plans get expert review before implementation
-✅ Implementations get validated before deployment
-✅ Knowledge persists for future use
-✅ Patterns become reusable team assets
+### Handling Retrieval Issues
 
-The key is working **with** Byterover's strengths (semantic search, persistence) while compensating for limitations (no tags) through unique IDs and rich context.
+If Byterover doesn't return expected results:
+
+1. **Broaden the query** - Use more general terms
+2. **Increase the limit** - Try `limit: 5` or `limit: 10`
+3. **Wait for processing** - Memories are indexed asynchronously (20-30 seconds)
+4. **Try alternative keywords** - Use synonyms or related concepts
+
+### Working with Codex
+
+When instructing the user to invoke Codex:
+
+1. **Provide complete commands** - Include full syntax with MCP tool names
+2. **Explain what will happen** - Set expectations about Codex's process
+3. **Guide next steps** - Tell user what to do after Codex completes
+4. **Use helper script** - Reference `collaborate.sh` when available
+
+## Bundled Resources
+
+### scripts/collaborate.sh
+
+Helper script that simplifies the workflow by providing:
+
+- **Unique identifier generation** - Creates identifiers for tracking collaboration
+- **Command templates** - Generates ready-to-run Codex commands
+- **Workflow guidance** - Explains next steps at each phase
+
+Usage examples:
+
+```bash
+# Generate unique identifier
+./collaborate.sh session
+
+# Get Codex review command
+./collaborate.sh codex-review [identifier]
+
+# Get Codex validation command
+./collaborate.sh codex-validate [identifier]
+
+# Show help
+./collaborate.sh help
+```
+
+Reference this script when providing Codex commands to users for a better experience.
+
+### references/example-session.md
+
+Complete walkthrough of a realistic collaboration session implementing rate limiting for an Express API. Review this file to see:
+
+- How to structure plans for effective review
+- What kind of feedback Codex typically provides
+- How to incorporate review feedback into implementation
+- Complete flow from planning through validation
+- Example of extracting reusable patterns
+
+Load this reference when users need concrete examples of the collaboration workflow.
+
+## Troubleshooting
+
+### Cannot Retrieve Previous Memory
+
+**Symptoms:** Byterover query returns no results or wrong results
+
+**Solutions:**
+1. Use more descriptive query terms combining feature name with keywords
+2. Increase the `limit` parameter to see more results
+3. Wait 30 seconds after storing for indexing to complete
+4. Try alternative query terms or broader concepts
+
+### Codex Cannot Access Byterover
+
+**Symptoms:** Codex reports inability to use Byterover tools
+
+**Solutions:**
+1. Verify Codex has Byterover MCP configured: `codex mcp list`
+2. Explicitly instruct Codex to use MCP tools in the command
+3. Check Byterover credentials are configured in Codex
+
+### Semantic Search Returns Unexpected Results
+
+**Symptoms:** Query returns memories from different projects or tasks
+
+**Solutions:**
+1. Make stored memories more distinctive with unique identifying information
+2. Use very specific query terms
+3. Include more context in queries
+4. Store richer, more detailed content in Byterover
+
+## Limitations
+
+### No Metadata Tagging
+
+Byterover uses semantic search without metadata tags or labels. Work around this by:
+- Embedding identifying information directly in content
+- Using consistent formatting and section headers
+- Including rich context in every stored memory
+- Creating unique, descriptive content that stands out semantically
+
+### Semantic Search Uncertainty
+
+Semantic matching may return similar but unintended memories. Mitigate this by:
+- Using highly specific, distinctive content
+- Including multiple identifying terms in queries
+- Verifying retrieved content matches expectations
+- Storing detailed, unique information for each task
+
+### Asynchronous Processing
+
+Memories take 20-30 seconds to become searchable after storage. Handle this by:
+- Waiting briefly after storing before attempting retrieval
+- Informing users about the processing delay
+- Using the time to provide context to users about next steps
+
+## Value Delivered
+
+This skill enables:
+
+- **Higher quality implementations** - Plans reviewed before coding catches issues early
+- **Learning from expertise** - Codex's architectural insights improve decision-making
+- **Persistent knowledge** - All decisions and patterns stored for future reference
+- **Cross-agent collaboration** - Leverage strengths of both Claude and Codex
+- **Pattern library building** - Validated implementations become reusable assets
+
+The collaboration workflow consistently produces better outcomes than either agent working alone, with the added benefit of building a searchable knowledge base of validated architectural decisions and implementation patterns.
