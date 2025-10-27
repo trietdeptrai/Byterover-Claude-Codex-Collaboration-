@@ -1,6 +1,6 @@
 ---
 name: claude-codex-collaboration
-description: Enable collaboration between Claude Code and Codex CLI using Byterover as shared memory. This skill should be used when architectural review or code validation from Codex is desired before or after implementation. Claude creates plans and implementations while Codex provides expert reviews and validation, with all context persisting in Byterover.
+description: Enable automated collaboration between Claude Code and Codex CLI using Byterover as shared memory. This skill should be used when architectural review or code validation from Codex is desired before or after implementation. Claude creates plans, directly invokes Codex for expert review via Bash, and implements based on feedback - all automatically without manual user intervention. All context persists in Byterover.
 allowed-tools:
   - mcp__byterover-mcp__byterover-store-knowledge
   - mcp__byterover-mcp__byterover-retrieve-knowledge
@@ -15,7 +15,7 @@ Transfer context between Claude Code and Codex CLI using Byterover as shared mem
 
 ## Purpose
 
-Enable seamless collaboration between two AI agents by using Byterover MCP as a persistent shared memory layer. Claude Code creates architectural plans and implementations, while Codex CLI provides expert architectural review and code validation. All knowledge persists in Byterover, allowing both agents to access the same context without manual information transfer.
+Enable seamless collaboration between two AI agents by using Byterover MCP as a persistent shared memory layer. Claude Code creates architectural plans and implementations, then directly invokes Codex CLI for expert architectural review and code validation. All knowledge persists in Byterover, allowing both agents to access the same context. The entire workflow is automated - Claude Code runs Codex directly via the Bash tool without requiring manual user intervention.
 
 ## When to Use This Skill
 
@@ -89,24 +89,29 @@ Date: [Current date]
 - Make the content self-contained and understandable
 - Include specific questions to guide Codex's review
 
-#### Step 3: Instruct User to Invoke Codex
+#### Step 3: Invoke Codex Directly
 
-Provide the user with a clear Codex command to run:
+**IMPORTANT:** Wait 30 seconds after storing the plan in Byterover before invoking Codex, as Byterover processes memories asynchronously. Inform the user about this wait time.
 
+Then use the Bash tool to run Codex directly from Claude Code:
+
+```typescript
+Bash({
+  command: `codex exec "Use the byterover-retrieve-knowledge tool to search for the latest architectural plan about [feature description]. Review the technical approach, identify potential issues, and provide detailed feedback. Store your review in Byterover using byterover-store-knowledge."`,
+  description: "Run Codex to review architectural plan",
+  timeout: 300000  // 5 minutes for Codex to complete
+})
 ```
-I've stored the architectural plan in Byterover.
 
-To get Codex's review, run this command:
-
-codex exec "Use the byterover-retrieve-knowledge tool to search for the latest architectural plan about [feature description]. Review the technical approach, identify potential issues, and provide detailed feedback. Store your review in Byterover using byterover-store-knowledge."
-
-Alternatively, use the helper script:
-./collaborate.sh codex-review [identifier]
-```
+**Important considerations:**
+- Wait 30 seconds after storing plan before invoking Codex (Byterover indexing delay)
+- Use a generous timeout (5+ minutes) as Codex may need time to retrieve, analyze, and store feedback
+- Inform the user that Codex is running in the background
+- The command should be self-contained with all necessary instructions
 
 #### Step 4: Codex Retrieves and Reviews
 
-The user runs Codex with the provided command. Codex will:
+Codex will automatically:
 
 1. Use `byterover-retrieve-knowledge` to find the plan
 2. Analyze the architectural approach
@@ -124,7 +129,7 @@ Codex's review typically includes:
 
 #### Step 5: Retrieve Codex's Feedback
 
-When the user returns after Codex's review, retrieve the feedback:
+After Codex completes (wait another 30 seconds for Byterover to index the feedback), retrieve the feedback:
 
 ```typescript
 mcp__byterover-mcp__byterover-retrieve-knowledge({
@@ -191,22 +196,23 @@ Date: [Current date]
 
 ### Phase 3: Validation (Optional)
 
-#### Step 8: Request Codex Validation
+#### Step 8: Invoke Codex for Validation
 
-Provide the user with a validation command:
+Use the Bash tool to run Codex validation directly:
 
+```typescript
+Bash({
+  command: `codex exec "Use the byterover-retrieve-knowledge tool to search for the completed implementation of [feature description]. Review the actual code files listed and validate the implementation quality. Store validation results in Byterover using byterover-store-knowledge."`,
+  description: "Run Codex to validate implementation",
+  timeout: 300000  // 5 minutes for validation
+})
 ```
-Implementation complete! For final validation from Codex, run:
 
-codex exec "Use the byterover-retrieve-knowledge tool to search for the completed implementation of [feature description]. Review the actual code files listed and validate the implementation quality. Store validation results in Byterover using byterover-store-knowledge."
-
-Alternatively, use the helper script:
-./collaborate.sh codex-validate [identifier]
-```
+Inform the user that Codex is performing validation in the background.
 
 #### Step 9: Codex Validates Implementation
 
-Codex will:
+Codex will automatically:
 1. Retrieve the implementation summary from Byterover
 2. Read the actual code files listed
 3. Validate code quality, patterns, and best practices
@@ -313,22 +319,25 @@ If Byterover doesn't return expected results:
 
 ### Working with Codex
 
-When instructing the user to invoke Codex:
+When invoking Codex directly via Bash:
 
-1. **Provide complete commands** - Include full syntax with MCP tool names
-2. **Explain what will happen** - Set expectations about Codex's process
-3. **Guide next steps** - Tell user what to do after Codex completes
-4. **Use helper script** - Reference `collaborate.sh` when available
+1. **Use generous timeouts** - Set timeout to 300000ms (5 minutes) or more
+2. **Provide complete commands** - Include full syntax with MCP tool names in the exec string
+3. **Inform the user** - Let them know Codex is running in the background
+4. **Wait for completion** - Allow Codex to finish before retrieving results from Byterover
+5. **Handle errors gracefully** - If Codex fails, check the error output and retry if needed
 
 ## Bundled Resources
 
 ### scripts/collaborate.sh
 
-Helper script that simplifies the workflow by providing:
+Helper script (optional, no longer required for automated workflow):
 
-- **Unique identifier generation** - Creates identifiers for tracking collaboration
-- **Command templates** - Generates ready-to-run Codex commands
-- **Workflow guidance** - Explains next steps at each phase
+Since Claude Code now invokes Codex directly via Bash, the helper script is optional. However, it can still be useful for:
+
+- Tracking collaboration sessions with unique identifiers
+- Manual invocation of Codex if needed
+- Debugging collaboration workflows
 
 Usage examples:
 
@@ -336,17 +345,15 @@ Usage examples:
 # Generate unique identifier
 ./collaborate.sh session
 
-# Get Codex review command
+# Get Codex review command (for manual use)
 ./collaborate.sh codex-review [identifier]
 
-# Get Codex validation command
+# Get Codex validation command (for manual use)
 ./collaborate.sh codex-validate [identifier]
 
 # Show help
 ./collaborate.sh help
 ```
-
-Reference this script when providing Codex commands to users for a better experience.
 
 ### references/example-session.md
 
@@ -423,7 +430,8 @@ This skill enables:
 - **Higher quality implementations** - Plans reviewed before coding catches issues early
 - **Learning from expertise** - Codex's architectural insights improve decision-making
 - **Persistent knowledge** - All decisions and patterns stored for future reference
-- **Cross-agent collaboration** - Leverage strengths of both Claude and Codex
+- **Automated collaboration** - Claude Code invokes Codex directly without manual intervention
+- **Cross-agent collaboration** - Leverage strengths of both Claude and Codex seamlessly
 - **Pattern library building** - Validated implementations become reusable assets
 
-The collaboration workflow consistently produces better outcomes than either agent working alone, with the added benefit of building a searchable knowledge base of validated architectural decisions and implementation patterns.
+The fully automated collaboration workflow consistently produces better outcomes than either agent working alone, with the added benefit of building a searchable knowledge base of validated architectural decisions and implementation patterns. Users benefit from expert-level code review without any manual handoff steps.
