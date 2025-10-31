@@ -30,7 +30,9 @@ Enables seamless collaboration between two AI agents:
 ---
 ### watch this video to learn more: 
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/7D4D69qni-0?si=KzNphVNx_XWHmvKv" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![Watch the video](https://img.youtube.com/vi/7D4D69qni-0/maxresdefault.jpg)](https://youtu.be/7D4D69qni-0)
+
+### [Watch this video on YouTube](https://youtu.be/7D4D69qni-0)
 
 ---
 
